@@ -1,0 +1,51 @@
+{
+  "name": "react-oauth2-auth-code-flow",
+  "version": "0.1.0",
+  "description": "Simplifying authorization via OAuth2s Authorization Code Flow (and PKCE) via React Components",
+  "main": "dist/ndex.js",
+  "scripts": {
+    "build": "babel src -d dist --copy-files",
+    "lint": "eslint .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "react",
+    "oauth",
+    "oauth2",
+    "authcode",
+    "flow"
+  ],
+  "author": "Benedikt Reiser <dev@burnedikt.com>",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@babel/cli": "^7.10.1",
+    "@babel/core": "^7.10.2",
+    "@babel/preset-env": "^7.10.2",
+    "@babel/preset-react": "^7.10.1",
+    "babel-eslint": "^10.1.0",
+    "core-js": "^3.6.5",
+    "eslint": "^7.2.0",
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-plugin-jest": "^23.13.2",
+    "eslint-plugin-prettier": "^3.1.4",
+    "eslint-plugin-react": "^7.20.0",
+    "jest": "^26.0.1",
+    "prettier": "^2.0.5"
+  },
+  "dependencies": {
+    "client-oauth2": "^4.3.0",
+    "prop-types": "^15.7.2",
+    "query-string": "^6.13.1",
+    "react": "^16.13.1"
+  },
+  "files": [
+    "dist/",
+    "src/",
+    ".babelrc"
+  ],
+  "jest": {
+    "transform": {
+      "^.+\\.jsx?$": "babel-jest"
+    }
+  }
+}
