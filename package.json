@@ -2,7 +2,7 @@
   "name": "react-oauth2-auth-code-flow",
   "version": "0.1.0",
   "description": "Simplifying authorization via OAuth2's Authorization Code Flow (and PKCE) via React Components",
-  "main": "dist/ndex.js",
+  "main": "dist/index.js",
   "scripts": {
     "build": "babel src -d dist --copy-files",
     "lint": "eslint .",
