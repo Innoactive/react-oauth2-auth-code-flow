@@ -40,8 +40,8 @@
     "react": "^16.13.1"
   },
   "files": [
-    "dist",
-    "src",
+    "dist/**",
+    "src/**",
     ".babelrc"
   ],
   "jest": {
