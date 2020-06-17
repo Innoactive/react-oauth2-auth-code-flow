@@ -1,0 +1,101 @@
+trigger:
+  - master
+
+variables:
+  npm_config_cache: $(Pipeline.Workspace)/.npm
+
+pool:
+  vmImage: ubuntu-latest
+
+jobs:
+  - job: Lint
+    steps:
+      - task: NodeTool@0
+        inputs:
+          versionSpec: ^10.19.0
+        displayName: "Install Node.js"
+      - task: Npm@1
+        inputs:
+          command: custom
+          customCommand: i -g npm@latest
+        displayName: "Install latest NPM"
+      - script: |
+          node -v
+          npm -v
+        displayName: "Print versions"
+      - task: CacheBeta@1
+        inputs:
+          key: npm | $(Agent.OS) | package-lock.json
+          path: $(npm_config_cache)
+        displayName: "Cache npm"
+      - script: npm ci
+        displayName: "Install dependencies"
+      - script: npm run lint
+        displayName: "Run lint"
+      - script: npx commitlint-azure-pipelines --config .commitlintrc.json
+
+  - job: Linux
+    strategy:
+      maxParallel: 4
+      matrix:
+        node-13:
+          node_version: ^13.0.0
+          webpack_version: latest
+        node-12:
+          node_version: ^12.0.0
+          webpack_version: latest
+        node-10:
+          node_version: ^10.19.0
+          webpack_version: latest
+    steps:
+      - task: NodeTool@0
+        inputs:
+          versionSpec: $(node_version)
+        displayName: "Install Node.js $(node_version)"
+      - task: Npm@1
+        inputs:
+          command: custom
+          customCommand: i -g npm@latest
+        displayName: "Install latest NPM"
+      - script: |
+          node -v
+          npm -v
+        displayName: "Print versions"
+      - task: CacheBeta@1
+        inputs:
+          key: npm | $(Agent.OS) | package-lock.json
+          path: $(npm_config_cache)
+        displayName: "Cache npm"
+      - script: npm ci
+        displayName: "Install dependencies"
+      - script: npm run build
+        displayName: "Run build"
+      - script: npm run coverage -- --ci --reporters=default --reporters=jest-junit --coverageReporters=text --coverageReporters=cobertura
+        displayName: "Run tests + coverage"
+      - task: PublishTestResults@2
+        inputs:
+          testResultsFormat: "JUnit"
+          testResultsFiles: "$(System.DefaultWorkingDirectory)/junit.xml"
+          failTaskOnFailedTests: true
+      - task: PublishCodeCoverageResults@1
+        inputs:
+          codeCoverageTool: "Cobertura"
+          summaryFileLocation: "$(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml"
+          failIfCoverageEmpty: true
+
+  - job: Release
+    dependsOn:
+      - Lint
+      - Linux
+    steps:
+      - task: NodeTool@0
+        inputs:
+          versionSpec: ^10.19.0
+        displayName: "Install Node.js"
+      - script: npm ci
+        displayName: "Install dependencies"
+      - script: npx semantic-release
+        env:
+          GH_TOKEN: "$(GH_TOKEN)"
+          NPM_TOKEN: "$(NPM_TOKEN)"
+        displayName: "Semantic release"
