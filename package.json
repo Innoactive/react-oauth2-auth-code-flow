@@ -6,7 +6,7 @@
   "scripts": {
     "build": "babel src -d dist --copy-files",
     "lint": "eslint .",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "prepare": "npm run build"
   },
   "keywords": [
@@ -31,6 +31,7 @@
     "eslint-plugin-prettier": "^3.1.4",
     "eslint-plugin-react": "^7.20.0",
     "jest": "^26.0.1",
+    "jest-localstorage-mock": "^2.4.2",
     "prettier": "^2.0.5"
   },
   "dependencies": {
@@ -47,6 +48,9 @@
   "jest": {
     "transform": {
       "^.+\\.jsx?$": "babel-jest"
-    }
+    },
+    "setupFiles": [
+      "jest-localstorage-mock"
+    ]
   }
 }
