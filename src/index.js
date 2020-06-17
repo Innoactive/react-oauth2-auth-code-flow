@@ -3,37 +3,26 @@
 // pkce functionality + some sensible defaults for Innoactive's projects
 
 import PropTypes from "prop-types";
-import { Component } from "react";
-import ClientOAuth2 from "client-oauth2";
-import queryString from "query-string";
+import React, { Component } from "react";
+import { OauthSender, OauthReceiver } from "react-oauth-flow";
 
 import { generateCodeChallenge, getCodeVerifier } from "./pkce";
 
-class BaseOAuthClientComponent extends Component {
-  constructor(props) {
-    super(props);
-
-    const { apiRoot, clientId, clientSecret } = props;
-
-    this.oauthClient = new ClientOAuth2({
-      clientId,
-      clientSecret,
-      accessTokenUri: `${apiRoot}/oauth/token/`,
-      authorizationUri: `${apiRoot}/oauth/authorize`,
-      redirectUri: `${document.location.origin}/hub/callback/`,
-      scopes: ["read"],
-    });
-  }
-
-  render() {
-    return null;
-  }
-}
+class BaseOAuthClientComponent extends Component {}
 
 const basePropTypes = {
-  apiRoot: PropTypes.string.isRequired,
-  clientId: PropTypes.string.isRequired,
-  clientSecret: PropTypes.string.isRequired,
+  oauthClient: PropTypes.shape({
+    options: PropTypes.shape({
+      clientId: PropTypes.string.isRequired,
+      clientSecret: PropTypes.string.isRequired,
+      redirectUri: PropTypes.string.isRequired,
+      authorizationUri: PropTypes.string.isRequired,
+      accessTokenUri: PropTypes.string.isRequired,
+    }),
+    code: PropTypes.shape({
+      getToken: PropTypes.func.isRequired,
+    }),
+  }),
 };
 
 BaseOAuthClientComponent.propTypes = basePropTypes;
@@ -49,97 +38,84 @@ export class RequestAuthorizationCode extends BaseOAuthClientComponent {
   }
 
   render() {
-    // default for children function is redirecting the browser
-    const {
-      children = (url) => {
-        window.location.assign(url);
-        return null;
-      },
-      state,
-    } = this.props;
+    const { oauthClient, args = {}, ...props } = this.props;
 
-    // request user's authorization by redirecting
-    const url = this.oauthClient.code.getUri({
-      state: state ? JSON.stringify(state) : undefined,
-      query: {
+    // obtain required options for OauthSender
+    const options = {
+      ...props,
+      // use oauth client's options if available
+      clientId: oauthClient.options.clientId,
+      authorizeUrl: oauthClient.options.authorizationUri,
+      redirectUri: oauthClient.options.redirectUri,
+      args: {
+        // add PKCE params to existing args
         code_challenge: this.state.code_challenge,
         code_challenge_method: "S256",
+        ...args,
       },
-    });
+    };
 
-    return children(url);
+    return <OauthSender {...options} />;
   }
 }
 
+delete OauthSender.propTypes.authorizeUrl;
+delete OauthSender.propTypes.clientId;
+delete OauthSender.propTypes.redirectUri;
+
 RequestAuthorizationCode.propTypes = {
   ...basePropTypes,
-  state: PropTypes.objectOf(
-    PropTypes.oneOfType([
-      PropTypes.string,
-      PropTypes.number,
-      PropTypes.bool,
-      PropTypes.object,
-    ])
-  ),
-  children: PropTypes.func,
+  ...OauthSender.propTypes,
+};
+
+RequestAuthorizationCode.defaultProps = {
+  ...OauthSender.defaultProps,
 };
 
 export class AuthorizationCodeCallback extends BaseOAuthClientComponent {
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      processing: true,
-      state: null,
-      error: null,
-    };
-
-    this.getAuthorizationCode = this.getAuthorizationCode.bind(this);
-  }
-
-  componentDidMount() {
-    this.getAuthorizationCode();
-  }
-
-  getAuthorizationCode() {
-    const { onAuthSuccess } = this.props;
+  render() {
+    const { oauthClient, ...props } = this.props;
 
     // Obtain the generated and stored code verifier for PKCE
     const codeVerifier = getCodeVerifier();
 
-    // parse the state that was sent along initially with the authorization request
-    const { state: stateString } = queryString.parse(document.location.search);
-    const state = stateString ? JSON.parse(stateString) : undefined;
+    // obtain required options for OauthReceiver
+    const options = {
+      ...props,
+      // use oauth client's options if available
+      clientId: oauthClient.options.clientId,
+      clientSecret: oauthClient.options.clientSecret,
+      tokenUrl: oauthClient.options.accessTokenUri,
+      redirectUri: oauthClient.options.redirectUri,
+      tokenFn:
+        props.tokenFn ||
+        function () {
+          return oauthClient.code
+            .getToken(document.location.href, {
+              body: { code_verifier: codeVerifier },
+            })
+            .then((token) => {
+              // react-oauth-flow expects the `access_token` attribute to exist
+              token.access_token = token;
+              return token;
+            });
+        },
+    };
 
-    this.oauthClient.code
-      .getToken(document.location.href, {
-        body: { code_verifier: codeVerifier },
-      })
-      .then((token) => {
-        if (typeof onAuthSuccess === "function") {
-          onAuthSuccess(token);
-        }
-
-        this.setState(() => ({ processing: false, state, token }));
-      })
-      .catch((error) => {
-        this.setState(() => ({
-          processing: false,
-          error,
-        }));
-      });
-  }
-
-  render() {
-    const { children } = this.props;
-    const { processing, state, error } = this.state;
-
-    return children({ processing, state, error });
+    return <OauthReceiver {...options} />;
   }
 }
 
+delete OauthReceiver.propTypes.tokenUrl;
+delete OauthReceiver.propTypes.redirectUri;
+delete OauthReceiver.propTypes.clientId;
+delete OauthReceiver.propTypes.clientSecret;
+
 AuthorizationCodeCallback.propTypes = {
   ...basePropTypes,
-  children: PropTypes.func,
-  onAuthSuccess: PropTypes.func,
+  ...OauthReceiver.propTypes,
+};
+
+AuthorizationCodeCallback.defaultProps = {
+  ...OauthReceiver.defaultProps,
 };

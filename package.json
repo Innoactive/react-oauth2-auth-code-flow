@@ -5,6 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "babel src -d dist --copy-files",
+    "dev": "npm run build -- --watch --source-maps inline",
     "lint": "eslint src",
     "test": "jest",
     "coverage": "npm run test -- --coverage",
@@ -25,6 +26,7 @@
     "@babel/preset-env": "^7.10.2",
     "@babel/preset-react": "^7.10.1",
     "@commitlint/cli": "^8.3.5",
+    "@commitlint/config-conventional": "^8.3.4",
     "babel-eslint": "^10.1.0",
     "commitlint-azure-pipelines-cli": "^1.0.3",
     "core-js": "^3.6.5",
@@ -39,10 +41,12 @@
     "prettier": "^2.0.5"
   },
   "dependencies": {
-    "client-oauth2": "^4.3.0",
     "prop-types": "^15.7.2",
-    "query-string": "^6.13.1",
-    "react": "^16.13.1"
+    "react": "^16.13.1",
+    "react-oauth-flow": "^1.2.0"
+  },
+  "peerDependencies": {
+    "client-oauth2": "^4.*"
   },
   "files": [
     "dist/**",
