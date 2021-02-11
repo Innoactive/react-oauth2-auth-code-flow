@@ -76,9 +76,6 @@ export class AuthorizationCodeCallback extends BaseOAuthClientComponent {
   render() {
     const { oauthClient, ...props } = this.props;
 
-    // Obtain the generated and stored code verifier for PKCE
-    const codeVerifier = getCodeVerifier();
-
     // obtain required options for OauthReceiver
     const options = {
       ...props,
@@ -90,6 +87,8 @@ export class AuthorizationCodeCallback extends BaseOAuthClientComponent {
       tokenFn:
         props.tokenFn ||
         function () {
+          // Obtain the generated and stored code verifier for PKCE
+          const codeVerifier = getCodeVerifier();
           return oauthClient.code
             .getToken(document.location.href, {
               body: { code_verifier: codeVerifier },
