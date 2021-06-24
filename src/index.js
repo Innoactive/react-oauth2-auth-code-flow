@@ -14,7 +14,7 @@ const basePropTypes = {
   oauthClient: PropTypes.shape({
     options: PropTypes.shape({
       clientId: PropTypes.string.isRequired,
-      clientSecret: PropTypes.string.isRequired,
+      clientSecret: PropTypes.string,
       redirectUri: PropTypes.string.isRequired,
       authorizationUri: PropTypes.string.isRequired,
       accessTokenUri: PropTypes.string.isRequired,
